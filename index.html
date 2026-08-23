@@ -85,6 +85,13 @@
          keyboard (ESC) and touch alike; wired in src/scenes/game.js. -->
     <button id="pause-toggle" type="button" aria-label="Pausa">⏸</button>
 
+    <!-- "Sfida un amico" (top-left, menu only — body.at-menu, where #pause-toggle is hidden).
+         A DOM button and NOT a Kaplay one on purpose: navigator.share() needs transient user
+         activation, and a Kaplay onClick runs inside the rAF loop, so iOS would reject it —
+         the very same trap as the AudioContext unlock. Wired in src/ui/shareButton.js. -->
+    <button id="share-btn" type="button" aria-label="Sfida un amico">📤</button>
+    <div id="share-toast" role="status" aria-live="polite" hidden>Link copiato!</div>
+
     <!-- iOS-only "Add to Home" hint. iPhone Safari tabs can't go true fullscreen, so the
          installed PWA is the way; shown + dismissed by src/ui/installHint.js. -->
     <div id="install-hint" hidden>

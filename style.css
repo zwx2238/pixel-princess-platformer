@@ -273,6 +273,66 @@ body.playing #pause-toggle {
   transform: scale(0.92);
 }
 
+/* --- Share button (top-left, menu only) -------------------------------------
+   Same circle as the audio/pause toggles so the chrome reads as one family. It lives in the
+   top-left because the top-right is the audio toggle and #pause-toggle is hidden off the menu,
+   so the corner is free exactly when this is on screen — the two are never up together. */
+#share-btn {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: calc(16px + env(safe-area-inset-left, 0px));
+  width: 54px;
+  height: 54px;
+  border: none;
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: #fff8f0;
+  background: rgba(38, 50, 92, 0.55);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 8; /* above canvas + touch layer, below the modals */
+  display: none; /* revealed only on the menu */
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease, background 0.12s ease;
+}
+body.at-menu #share-btn {
+  display: flex;
+}
+#share-btn:hover {
+  background: rgba(38, 50, 92, 0.75);
+}
+#share-btn:active {
+  transform: scale(0.92);
+}
+
+/* Confirmation pill under the button: the clipboard fallback is silent otherwise, and a copy
+   you can't see is a copy you don't trust. Never interactive — it must not eat the next tap. */
+#share-toast {
+  position: fixed;
+  top: calc(78px + env(safe-area-inset-top, 0px));
+  left: calc(16px + env(safe-area-inset-left, 0px));
+  max-width: 210px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: #fff8f0;
+  color: #26325c;
+  font-family: "PixelifySans", monospace;
+  font-size: 15px;
+  line-height: 1.25;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 8;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+#share-toast.is-visible {
+  opacity: 1;
+}
+
 /* Pause card: a heading + a column of full-width buttons. */
 .pause-title {
   font-size: 30px;

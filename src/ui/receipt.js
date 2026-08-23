@@ -6,14 +6,19 @@
 // it opens the generic share sheet so Anna picks the chat.
 
 import { formatDuration } from "../format.js";
+import { gameUrl } from "./shareButton.js";
 
 // Share text from the spec, extended with the lifetime + time lines; encoded at click time.
+// The link is appended last: the message boasted a finishing time at someone who had no way to
+// try beating it. `gameUrl()` reads the canonical origin off the og:url meta, so there is still
+// exactly one place where the public URL is written down.
 function whatsappUrl(run, lifetime, timeMs) {
   const text =
     `Ho finito il gioco e sono la Principessa Perfetta! ❤️ ` +
     `Ci ho messo ${formatDuration(timeMs)}! ` +
     `Preparati, ti devo ${run} coccoline! ` +
-    `(Totale storico: ${lifetime} coccoline)`;
+    `(Totale storico: ${lifetime} coccoline) ` +
+    `Provi a battermi? ${gameUrl()}`;
   return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
 }
 

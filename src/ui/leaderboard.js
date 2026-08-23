@@ -151,8 +151,10 @@ function wireChrome(onClose) {
  * @param {number} timeMs  the run's net play time
  * @param {boolean} [inviteMode]  finale invitation: shows the headline and turns the close button
  *   into a small "Salta", so entering the board is the expected step rather than a hidden option.
- * @param {() => void} [onDone]  runs once the player is finished here — after a successful submit
- *   OR after "Salta". The finale uses it to chain the receipt. NOT fired by hideLeaderboard().
+ * @param {() => void} [onDone]  runs when she closes this step — "Salta" if she skipped, or the
+ *   "Chiudi" the button becomes once her time is in. The finale uses it to chain the receipt, so
+ *   it fires on both paths and exactly once. NOT fired by hideLeaderboard() (a defensive hide on
+ *   entering another scene must not spring the receipt).
  */
 export function openLeaderboard({ score, timeMs, inviteMode = false, onDone } = {}) {
   els();
@@ -224,7 +226,14 @@ export function openLeaderboard({ score, timeMs, inviteMode = false, onDone } = 
   // hatch. So the invitation is just: your time, your name, send, skip; the board arrives right
   // after as the reward (and the ★ Classifica button browses it any time).
   if (inviteMode && !alreadySent) {
-    if (statusEl) statusEl.textContent = "";
+    // A returning player's nickname is already in the field (it survives every reset, state.js),
+    // so her whole job is one tap — say so, or the pre-filled box reads as "already done". No
+    // autofocus: on a landscape iPhone (~430px tall) the keyboard would swallow the card, and
+    // style.css already fights for that vertical space (@media max-height: 560px).
+    const known = getNickname();
+    if (statusEl) {
+      statusEl.textContent = known ? `Bentornata, ${known}! Il nome c'è già: manda il tempo.` : "";
+    }
     return;
   }
   loadPage(0); // otherwise show the current standings underneath the form right away

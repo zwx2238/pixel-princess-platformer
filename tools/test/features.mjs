@@ -68,6 +68,23 @@ try {
     a2.icon.includes("🔊") && !a2.muted && a2.sfx === "1" && a2.music === "1",
     JSON.stringify(a2),
   );
+
+  // --- §4b "Sfida un amico": a MENU-only button (body.at-menu), sharing the canonical origin.
+  // It is DOM and not a Kaplay button because navigator.share() needs transient user activation,
+  // which a click dispatched from the rAF loop has already lost. See src/ui/shareButton.js. ---
+  const shareState = await page.evaluate(() => {
+    const el = document.getElementById("share-btn");
+    return {
+      onMenu: document.body.classList.contains("at-menu"),
+      visible: !!el && getComputedStyle(el).display !== "none",
+      url: document.querySelector('meta[property="og:url"]')?.content || "",
+    };
+  });
+  check(
+    "share button shows on the menu",
+    shareState.onMenu && shareState.visible && shareState.url.startsWith("http"),
+    JSON.stringify(shareState),
+  );
   check("single audio button (no separate music toggle)", (await page.$("#music-toggle")) === null);
 
   // --- Enter gameplay on Livello 2 (it has crabs — needed for the stomp checks below).
@@ -476,6 +493,66 @@ try {
     JSON.stringify(avatarState),
   );
   await page.screenshot({ path: SHOT });
+
+  // --- §3b The classifica is a GATE, not a six-second window. The invitation used to be a bare
+  // k.wait(6), and a finished run's record died to anything that left the scene first — the habitual
+  // Enter/Space on the letter, the big "Torna al menu" button, or (on the PWA) a trip to the
+  // background, which pauses the tree and freezes Kaplay's timers outright. Now the first attempt to
+  // leave OPENS the board instead of skipping it. See src/scenes/finale.js. ---
+  await page.evaluate(() => window.__pj.k.go("finale"));
+  await new Promise((r) => setTimeout(r, 250)); // let the scene mount + arm its key handler
+  await page.keyboard.press("Enter"); // "get me out of here", pressed long before the 6s timer
+  await page.waitForFunction(() => !document.getElementById("leaderboard-overlay").hidden, null, {
+    timeout: T,
+    polling: 100,
+  });
+  const gate = await page.evaluate(() => ({
+    stillFinale: window.__pj.k.get("avatar").length === 1, // it opened the board, it didn't leave
+    invite: !document.getElementById("lb-invite").hidden,
+    close: document.getElementById("lb-close").textContent,
+    // Off the menu the share button must be gone: this corner is the "★ Classifica" button's.
+    shareHidden: getComputedStyle(document.getElementById("share-btn")).display === "none",
+  }));
+  check(
+    "early exit opens the classifica instead of skipping it",
+    gate.stillFinale && gate.invite && gate.close === "Salta",
+    JSON.stringify(gate),
+  );
+  check("share button is menu-only", gate.shareHidden, JSON.stringify(gate));
+
+  // ...and the engine timer must NOT fire a second invitation on top of the open one: re-running
+  // openLeaderboard() would reset the field mid-typing. `invited` makes the loser of that race a
+  // no-op. Waits past both timers (k.wait at 6s, the wall-clock backstop at 7s).
+  await page.type("#nickname-input", "Gattina");
+  await new Promise((r) => setTimeout(r, 7600));
+  const noDouble = await page.evaluate(() => ({
+    nick: document.getElementById("nickname-input").value,
+    open: !document.getElementById("leaderboard-overlay").hidden,
+    receiptHidden: document.getElementById("receipt-overlay").hidden,
+  }));
+  check(
+    "no second invitation lands on top of the first",
+    noDouble.open && noDouble.nick.includes("Gattina") && noDouble.receiptHidden,
+    JSON.stringify(noDouble),
+  );
+
+  // The early invitation still chains the receipt behind it — the whole point of routing every
+  // path through one offerLeaderboard() is that nothing downstream gets lost.
+  await page.click("#lb-close");
+  await page.waitForFunction(() => !document.getElementById("receipt-overlay").hidden, null, {
+    timeout: T,
+    polling: 100,
+  });
+  const chained = await page.evaluate(() => ({
+    receipt: !document.getElementById("receipt-overlay").hidden,
+    boardClosed: document.getElementById("leaderboard-overlay").hidden,
+  }));
+  check(
+    "early invitation still chains the receipt",
+    chained.receipt && chained.boardClosed,
+    JSON.stringify(chained),
+  );
+  await page.click("#receipt-close");
 
   // --- Fase Arcade: hearts grant a life, and losing them all triggers Game Over (back to
   // level 1, score wiped, Coccoline tab KEPT). Run last, so the earlier finale-receipt

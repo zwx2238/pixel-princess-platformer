@@ -6,6 +6,7 @@ import { loadAssets } from "./assets.js";
 import { getRunTime } from "./state.js";
 import { bindTouchButtons, getInput } from "./controls.js";
 import { bindAudioToggle } from "./ui/audioToggle.js";
+import { bindShareButton } from "./ui/shareButton.js";
 import { installAudioUnlock } from "./audioUnlock.js";
 import { installViewportResync } from "./viewportResync.js";
 import { installBackgroundFreeze } from "./backgroundFreeze.js";
@@ -25,6 +26,10 @@ bindTouchButtons();
 
 // Wire the global audio on/off button once; it applies any saved mute preference.
 bindAudioToggle();
+
+// Wire the menu's "Sfida un amico" button. A DOM button, not a Kaplay one: navigator.share()
+// needs transient user activation, which a click dispatched from the rAF loop no longer has.
+bindShareButton();
 
 // Unlock the WebAudio context on the first real DOM gesture (iOS Safari needs this — see
 // src/audioUnlock.js). Without it, neither music nor SFX ever play on iPhone.

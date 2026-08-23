@@ -90,6 +90,13 @@ npm run deploy               # prod deploy to Vercel (VERCEL_TOKEN from the giti
 - **The pixel font has no emoji/★ glyphs:** any `k.text()` containing 👑 🍎 ✨ ★ must pass
   `font: "sans-serif"` per object. **Long-form prose too** (the finale letter, the menu character
   descriptions) — the pixel font is unreadable as running text.
+- **The share button (`📤` "Sfida un amico") is DOM, not Kaplay** — `navigator.share()` needs
+  transient user activation, and a Kaplay `onClick` fires from the rAF loop, where iOS has already
+  revoked it (the same trap as the AudioContext unlock). It is **menu-only** via `body.at-menu`,
+  mirroring how `body.playing` gates `#pause-toggle`: they share the top-left corner and must never
+  be up together. The link comes from `gameUrl()` (`src/ui/shareButton.js`), which reads the
+  `og:url` meta — the one place the public origin is written down; the receipt's WhatsApp text
+  reuses it, so the two can't drift.
 - **HUD counters stay in the left column (x=88).** The top-right corner belongs to the DOM audio
   button, which is `position: fixed` and always paints above the canvas — with letterboxing it
   overhangs the canvas edge and covers anything right-anchored.
@@ -131,6 +138,14 @@ npm run deploy               # prod deploy to Vercel (VERCEL_TOKEN from the giti
   (submit or the small "Salta"); its `onDone` then chains the receipt. Reversed, players closed the
   app on the receipt and never saw the board at all. The DOM overlay swallows clicks but **not
   keys**, so `toMenu` early-returns on `isLeaderboardOpen()` — keep that guard.
+- **That gate must stay UNSKIPPABLE.** It was once a bare `k.wait(6, …)`, and finished runs never
+  reached the board: Enter/Space/Esc or "Torna al menu" inside those six seconds killed the scene
+  *and* the pending timer, "★ Classifica" opened the board with no `onDone` (so the receipt never
+  chained), and a backgrounded PWA pauses the tree — which stops `k.wait` outright. Every path now
+  runs through one idempotent `offerLeaderboard()`: **the first attempt to leave OPENS the board
+  instead of skipping it**, a wall-clock `setTimeout` backstops the engine timer (cleared on exit),
+  and the `invited` flag makes a second invitation — which would wipe a nickname mid-typing —
+  impossible. Don't collapse this back into a lone timer. Coverage: `§3b` in `features.mjs`.
 
 ### PWA — see `sw.js`, `tools/deploy.mjs`, `paintAppIcon` in `tools/gen/characters.mjs`
 - **The service worker is prod-only** (never registered on localhost, or it would serve stale files

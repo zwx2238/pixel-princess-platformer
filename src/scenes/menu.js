@@ -66,8 +66,10 @@ export function registerMenuScene() {
     hideSettings();
     resetHitStop(); // never inherit a frozen 0.15× timeScale from a hit-stop cut short by leaving game
     setFrameCap(PERF.IDLE_FPS); // the menu only drifts a backdrop — 30fps runs cool while she picks
-    // Hide the gameplay touch controls so they never cover the menu's character cards.
+    // Hide the gameplay touch controls so they never cover the menu's character cards, and
+    // reveal the menu-only share button (top-left, free here since #pause-toggle is gameplay-only).
     document.body.classList.remove("playing");
+    document.body.classList.add("at-menu");
 
     // Resume the gentle menu track when we return here with audio already unlocked. On the
     // very first load the AudioContext is still locked, so this no-ops until the first click

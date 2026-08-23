@@ -9,6 +9,7 @@ export function registerLoadingScene() {
   k.scene("loading", () => {
     // Touch controls belong to gameplay only — keep them hidden on the loading screen.
     document.body.classList.remove("playing");
+    document.body.classList.remove("at-menu");
     setFrameCap(PERF.IDLE_FPS); // just a title + a pulsing dot — no need to render it at full rate
 
     k.add([k.rect(GAME_W, GAME_H), k.pos(0, 0), k.color(...PALETTE.deepBlue)]);

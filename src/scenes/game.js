@@ -96,6 +96,7 @@ export function registerGameScene() {
     // previous menu/pause/reward may have throttled it — restore it the instant a level starts.
     // Reveal the on-screen touch controls (CSS shows them only while body.playing).
     document.body.classList.add("playing");
+    document.body.classList.remove("at-menu"); // the top-left corner is the pause button's now
 
     const charId = getSelectedCharacter();
     const char = CHARACTERS.find((c) => c.id === charId) || CHARACTERS[0];

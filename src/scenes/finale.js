@@ -38,8 +38,10 @@ export function registerFinaleScene() {
     hideSettings();
     resetHitStop(); // arrive at full speed even if a stomp's hit-stop was cut short by the goal
     setFrameCap(PERF.IDLE_FPS); // a cinematic still with a bobbing avatar — 30fps is cool and ample
-    // Cinematic scene — no controls; keep the gameplay touch buttons hidden.
+    // Cinematic scene — no controls; keep the gameplay touch buttons hidden. The menu-only
+    // share button goes too: this corner belongs to the "★ Classifica" button below.
     document.body.classList.remove("playing");
+    document.body.classList.remove("at-menu");
 
     const charId = getSelectedCharacter();
     const char = CHARACTERS.find((c) => c.id === charId) || CHARACTERS[0];
@@ -135,6 +137,40 @@ export function registerFinaleScene() {
       k.z(21),
     ]);
 
+    // --- The closing sequence: read → CLASSIFICA → scontrino ---------------------------------
+    // The leaderboard comes FIRST and unmissably. It used to be last (receipt → "Chiudi" → board),
+    // which meant anyone who closed the app on the receipt never saw it at all — the player simply
+    // reported "there's no prompt to enter the leaderboard". Now it is the gate: a modal invitation
+    // she can only leave by sending her time or tapping the small "Salta". Either way `onDone`
+    // chains the Coccoline receipt (with its WhatsApp payoff) behind it, so nothing is lost.
+    //
+    // ...and the gate is now UNSKIPPABLE, which it quietly wasn't. The invitation was a bare
+    // `k.wait(6, …)`, so a finished run's record was lost to any of three everyday paths:
+    //   1. Enter/Space/Esc (armed from frame 0) or the big "Torna al menu" button pressed inside
+    //      those six seconds — the scene dies and takes the pending timer with it.
+    //   2. Tapping "★ Classifica" first, which opened the board with no `inviteMode`/`onDone`:
+    //      the receipt never chained, and the timer later re-opened the overlay on top of itself.
+    //   3. `k.wait` rides Kaplay's update loop, which a paused tree halts — backgrounding the PWA
+    //      mid-letter (backgroundFreeze) froze the countdown indefinitely.
+    // So there is now ONE idempotent `offerLeaderboard()` and every path runs through it: the first
+    // attempt to leave OPENS the invitation instead of skipping it, a wall-clock timer backstops the
+    // engine one, and the `invited` flag makes a double invitation impossible.
+    let invited = false; // the classifica has been offered — once per visit, by whoever got there first
+    let leaving = false; // the scene is on its way out; the backstop must not pop over the menu
+    let backstop = null; // wall-clock twin of the k.wait timer (assigned at the bottom)
+
+    const showBill = () => showReceipt(getCoccolineRun(), getCoccoline(), getRunTime());
+    const offerLeaderboard = () => {
+      if (invited || leaving) return;
+      invited = true;
+      openLeaderboard({
+        score: getScore(),
+        timeMs: getRunTime(),
+        inviteMode: true,
+        onDone: showBill, // a sent time or a tapped "Salta" — the receipt follows either way
+      });
+    };
+
     // --- Return-to-menu button (also Enter / Space / Esc) ---
     const btn = k.add([
       k.rect(260, 60, { radius: 14 }),
@@ -157,15 +193,24 @@ export function registerFinaleScene() {
       // A DOM overlay above the canvas swallows CLICKS but not KEYS: Enter to confirm a nickname,
       // or Esc, would otherwise fire this and jump to the menu right past the leaderboard step.
       if (isLeaderboardOpen()) return;
+      // The board is a gate, not a six-second window: the first attempt to leave opens it. Once
+      // she's actually done with it (time sent, or "Salta" tapped) the next press leaves as usual.
+      if (!invited) {
+        sfx("select");
+        offerLeaderboard();
+        return;
+      }
+      leaving = true;
+      clearTimeout(backstop);
       sfx("select");
       fadeToScene(() => k.go("menu"));
     };
     btn.onClick(toMenu);
     k.onKeyPress(["enter", "space", "escape"], toMenu);
 
-    // Leaderboard re-entry: a button to re-open the global classifica after the closing sequence
-    // below has already offered it (a run that's already been filed shows as such, so this can't
-    // create a duplicate row). Top-LEFT corner: the top-right is occupied by the DOM audio toggle,
+    // Leaderboard re-entry: re-opens the global classifica once the invitation has run (a run
+    // already filed shows as such, so this can't create a duplicate row) — and stands in AS the
+    // invitation for anyone who reaches for it first. Top-LEFT: the top-right is the audio toggle,
     // and the pause button (top-left) is hidden in this non-playing scene, so the corner is free.
     const lbBtn = k.add([
       k.rect(248, 56, { radius: 12 }),
@@ -190,31 +235,22 @@ export function registerFinaleScene() {
     });
     lbBtn.onClick(() => {
       sfx("select");
+      // Tapped before the invitation ran, THIS *is* the invitation — otherwise opening the board
+      // by hand was a dead end that filed the time but never chained the receipt.
+      if (!invited) return offerLeaderboard();
       openLeaderboard({ score: getScore(), timeMs: getRunTime() });
     });
 
-    // --- The closing sequence: read → CLASSIFICA → scontrino ---------------------------------
-    // The leaderboard comes FIRST and unmissably. It used to be last (receipt → "Chiudi" → board),
-    // which meant anyone who closed the app on the receipt never saw it at all — the player simply
-    // reported "there's no prompt to enter the leaderboard". Now it is the gate: a modal invitation
-    // she can only leave by sending her time or tapping the small "Salta". Either way `onDone`
-    // chains the Coccoline receipt (with its WhatsApp payoff) behind it, so nothing is lost.
-    //
     // The delay still lets the heartfelt letter breathe before anything covers it — shorter than
-    // the old 10s, because the letter is no longer the only thing waiting on the player.
-    // Offline the board degrades to a friendly "non disponibile" (see leaderboard.js), so the
-    // chain never dead-ends; the top-left "★ Classifica" button re-opens it (already-sent runs
-    // show as filed instead of offering a duplicate submit).
+    // the old 10s, because the letter is no longer the only thing waiting on the player. Offline
+    // the board degrades to a friendly "non disponibile" (see leaderboard.js), so the chain never
+    // dead-ends; the top-left "★ Classifica" button re-opens it afterwards.
     const INVITE_DELAY = 6; // s — enough to read the letter, soon enough to still feel like the payoff
-    const showBill = () => showReceipt(getCoccolineRun(), getCoccoline(), getRunTime());
-    k.wait(INVITE_DELAY, () =>
-      openLeaderboard({
-        score: getScore(),
-        timeMs: getRunTime(),
-        inviteMode: true,
-        onDone: showBill,
-      }),
-    );
+    k.wait(INVITE_DELAY, offerLeaderboard);
+    // Wall-clock backstop for case 3 above: setTimeout keeps counting while the tree is frozen, so
+    // the invitation survives a trip to the background. `invited` makes the loser of the race a
+    // no-op; toMenu clears it so it can never fire over the menu.
+    backstop = setTimeout(offerLeaderboard, (INVITE_DELAY + 1) * 1000);
   });
 }
 
