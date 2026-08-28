@@ -1,7 +1,7 @@
 // viewportResync.js — keeps Kaplay's canvas geometry honest across RESUME and ROTATION.
 //
 // Why this exists: Kaplay runs letterbox+stretch and recomputes the letterbox from
-// canvas.offsetWidth/Height via a ResizeObserver on the canvas (vendor/kaplay-3001.0.19.mjs). That
+// canvas.offsetWidth/Height via a ResizeObserver on the canvas (vendor/kaplay-3001.0.19.js). That
 // observer has two properties that bite on iOS:
 //   1. it EARLY-RETURNS when the box dimensions are unchanged (it caches lastWidth/lastHeight), and
 //   2. it DEFERS the actual recompute to the engine's next input tick (`events.onOnce("input")`).

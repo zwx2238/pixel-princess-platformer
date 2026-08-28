@@ -34,7 +34,7 @@ leaderboard** — the *net* play time, so pauses and death overlays don't count.
 ## Tech stack
 
 Vanilla **JavaScript ES modules**, **no build step**: [Kaplay](https://kaplayjs.com/) is vendored
-(`vendor/kaplay-3001.0.19.mjs`) and imported directly, so the game is just static files served
+(`vendor/kaplay-3001.0.19.js`) and imported directly, so the game is just static files served
 as-is. **`src/config.js`** is the single source of truth (resolution, palette, characters, skins,
 physics, assets). DOM/HTML UI (`src/ui/`) is isolated from the gameplay/collision logic
 (`src/scenes/game.js`). Deployed on **Vercel**; browser tests run in real Edge via

@@ -29,7 +29,7 @@ export function addSkinLayers(parent, keys = []) {
 /**
  * Spawn the player.
  * @param {{sprite:string}} char  the chosen character (from CHARACTERS)
- * @param {import("../../vendor/kaplay-3001.0.19.mjs").Vec2} pos spawn position
+ * @param {import("../../vendor/kaplay-3001.0.19.js").Vec2} pos spawn position
  * @param {string[]} skinKeys sprite keys to layer on top of the base body,
  *   in paint order (e.g. ["skirt"] on level 2). Each is a 64×96 transparent overlay.
  * @param {{accelTime?:number}} [feel]  per-level feel overrides (e.g. an icy level passes

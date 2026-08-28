@@ -8,7 +8,7 @@ up" into regressions. Each points at the file whose **header comment carries the
 re-narrate those stories here; the repo's convention is that the "why" lives next to the code.
 
 ## What this is
-- **No-build** browser platformer. Kaplay is **vendored** (`vendor/kaplay-3001.0.19.mjs`) — nothing
+- **No-build** browser platformer. Kaplay is **vendored** (`vendor/kaplay-3001.0.19.js`) — nothing
   to compile or bundle.
 - One engine context: `src/kaplayCtx.js` exports `k`; every module imports it. No globals.
 - **`src/config.js` is the single source of truth** for tunables (GAME_W/H, PALETTE, CHARACTERS,

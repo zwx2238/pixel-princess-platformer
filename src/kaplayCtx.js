@@ -4,7 +4,7 @@
 
 // Kaplay is vendored (pinned 3001.0.19, downloaded from unpkg) so production never
 // depends on a CDN being up, and the game can later work offline as a PWA.
-import kaplay from "../vendor/kaplay-3001.0.19.mjs";
+import kaplay from "../vendor/kaplay-3001.0.19.js";
 import { GAME_W, GAME_H, PALETTE } from "./config.js";
 
 // Touch devices (phones/tablets) usually pair a high devicePixelRatio (3 on iPhone) with a
