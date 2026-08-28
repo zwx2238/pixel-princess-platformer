@@ -69,9 +69,11 @@ k.go("loading");
 // Register the service worker for offline play / PWA install (src/sw.js → /sw.js at the
 // site root, scope "/"). Production only: on localhost it would cache files between the
 // Playwright test runs (and dev edits), serving stale content — so the dev/test loop stays
-// service-worker-free, exactly like the window.__pj dev handle below.
+// service-worker-free, exactly like the window.__pj dev handle below. Embedded deployments also
+// leave caching to their host so an iframe cannot keep serving a stale game revision.
 if (
   "serviceWorker" in navigator &&
+  window.top === window.self &&
   location.hostname !== "localhost" &&
   location.hostname !== "127.0.0.1"
 ) {
